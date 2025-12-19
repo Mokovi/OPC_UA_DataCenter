@@ -1,0 +1,10 @@
+# OPC UA 数据采集配置文件
+
+# OPC UA 服务器连接配置
+OPC_UA_URL = opc.tcp://192.168.10.17:49320
+OPC_UA_SecurityMode = None
+
+# 连接参数
+ConnectionTimeout = 5000
+SessionTimeout = 30000
+SubscriptionInterval = 1000

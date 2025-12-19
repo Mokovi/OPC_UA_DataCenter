@@ -1,0 +1,6 @@
+# OPC UA 节点列表文件
+# 格式：NamespaceIndex.NodeId (这里NamespaceIndex=2)
+
+Sim.Device1.Test1
+Sim.Device1.Test2
+Sim.Device1.Test3
