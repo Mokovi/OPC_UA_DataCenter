@@ -8,3 +8,12 @@ OPC_UA_SecurityMode = None
 ConnectionTimeout = 5000
 SessionTimeout = 30000
 SubscriptionInterval = 1000
+
+# Kafka 配置
+KafkaBootstrapServers = localhost:9092
+KafkaTopic = opcua-data
+KafkaClientId = opcua-collector-01
+KafkaAcks = 1
+KafkaRetries = 3
+KafkaBatchSize = 16384
+KafkaLingerMs = 5

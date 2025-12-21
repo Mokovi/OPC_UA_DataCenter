@@ -122,21 +122,62 @@ Created subscription for node: Sim.Device1.Test3
 ### 代码结构
 
 ```
-src/
-├── main.cpp                 # 程序入口
-└── opcua/
-    ├── config.hpp/cpp       # 配置加载
-    ├── data_point.hpp/cpp   # 数据点模型
-    ├── client.hpp/cpp       # OPC UA 客户端
-    └── data_collector.hpp/cpp # 数据采集器
+code/
+├── data_collector/          # 数据采集模块
+│   ├── main.cpp             # 程序入口
+│   ├── opcua_client/        # OPC UA 客户端子模块
+│   │   ├── config.hpp/cpp   # 配置加载
+│   │   ├── data_point.hpp/cpp # 数据点模型
+│   │   ├── client.hpp/cpp   # OPC UA 客户端
+│   │   └── data_collector.hpp/cpp # 数据采集器
+│   └── kafka_producer/      # Kafka 生产者子模块
+│       └── kafka_producer.hpp/cpp # Kafka 消息发送
+└── data_processor/          # 数据处理模块
 ```
+
+## Kafka 集成说明
+
+### 配置参数
+
+```ini
+# Kafka 配置
+KafkaBootstrapServers = localhost:9092,localhost:9093
+KafkaTopic = opcua-data
+KafkaClientId = opcua-collector-01
+KafkaAcks = 1
+KafkaRetries = 3
+KafkaBatchSize = 16384
+KafkaLingerMs = 5
+```
+
+### 消息格式
+
+采集到的数据点将以 JSON 格式发送到 Kafka：
+
+```json
+{
+  "source_id": "opc.tcp://192.168.10.17:49320",
+  "node_id": "Sim.Device1.Test1",
+  "value": "123.45",
+  "device_timestamp": 1734768000000,
+  "ingest_timestamp": 1734768000500,
+  "quality": 0
+}
+```
+
+### 部署要求
+
+- 安装 librdkafka 开发包：`sudo apt-get install librdkafka-dev`
+- 确保 Kafka 服务器可访问
+- 配置适当的主题和分区策略
 
 ### 扩展功能
 
-- 添加更多数据处理器（如写入 Kafka、Redis 等）
-- 实现更复杂的数据质量判断
+- 添加更多数据处理器（如写入 Redis、数据库等）
+- 实现更复杂的数据质量判断和过滤
 - 添加监控和告警功能
 - 支持更多 OPC UA 特性（如历史数据读取、安全连接等）
+- 实现消息压缩和批量优化
 
 ## 性能考虑
 

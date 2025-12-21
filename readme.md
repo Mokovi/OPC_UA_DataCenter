@@ -326,11 +326,17 @@ rules:
 ```
 distributed-data-collection/
 ├── code/
-│   ├── opcua_client/          # OPC UA客户端模块
-│   │   ├── client.cpp
-│   │   ├── config.cpp
-│   │   ├── data_point.cpp
-│   │   └── data_collector.cpp
+│   ├── data_collector/        # 数据采集模块
+│   │   ├── main.cpp
+│   │   ├── opcua_client/      # OPC UA客户端子模块
+│   │   │   ├── client.cpp
+│   │   │   ├── config.cpp
+│   │   │   ├── data_point.cpp
+│   │   │   └── data_collector.cpp
+│   │   └── kafka_producer/    # Kafka生产者子模块
+│   │       ├── kafka_producer.cpp
+│   │       └── kafka_producer.hpp
+│   └── data_processor/        # 数据处理模块
 │   ├── network/               # 网络框架
 │   │   ├── reactor.cpp
 │   │   ├── thread_pool.cpp

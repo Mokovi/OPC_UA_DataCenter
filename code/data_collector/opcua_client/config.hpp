@@ -4,6 +4,7 @@
 #include <vector>
 #include <optional>
 #include <filesystem>
+#include "../kafka_producer/kafka_producer.hpp"
 
 namespace opcuaclient {
 
@@ -30,6 +31,9 @@ struct OpcUaConfig {
     uint32_t session_timeout_ms;   ///< 会话超时时间 (毫秒)
     uint32_t subscription_interval_ms; ///< 订阅发布间隔 (毫秒)
     std::vector<NodeConfig> nodes; ///< 要采集的节点列表
+
+    // Kafka 配置
+    kafka::KafkaConfig kafka_config; ///< Kafka 生产者配置
 
     OpcUaConfig() :
         connection_timeout_ms(5000),

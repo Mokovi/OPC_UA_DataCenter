@@ -84,6 +84,44 @@ std::optional<OpcUaConfig> ConfigLoader::parseConfigFile(const std::filesystem::
             } catch (const std::exception&) {
                 std::cerr << "Invalid SubscriptionInterval value: " << value << std::endl;
             }
+        } else if (key == "KafkaBootstrapServers") {
+            // 支持逗号分隔的服务器列表
+            std::istringstream iss(value);
+            std::string server;
+            while (std::getline(iss, server, ',')) {
+                server = trim(server);
+                if (!server.empty()) {
+                    config.kafka_config.bootstrap_servers.push_back(server);
+                }
+            }
+        } else if (key == "KafkaTopic") {
+            config.kafka_config.topic = value;
+        } else if (key == "KafkaClientId") {
+            config.kafka_config.client_id = value;
+        } else if (key == "KafkaAcks") {
+            try {
+                config.kafka_config.acks = std::stoi(value);
+            } catch (const std::exception&) {
+                std::cerr << "Invalid KafkaAcks value: " << value << std::endl;
+            }
+        } else if (key == "KafkaRetries") {
+            try {
+                config.kafka_config.retries = std::stoi(value);
+            } catch (const std::exception&) {
+                std::cerr << "Invalid KafkaRetries value: " << value << std::endl;
+            }
+        } else if (key == "KafkaBatchSize") {
+            try {
+                config.kafka_config.batch_size = std::stoi(value);
+            } catch (const std::exception&) {
+                std::cerr << "Invalid KafkaBatchSize value: " << value << std::endl;
+            }
+        } else if (key == "KafkaLingerMs") {
+            try {
+                config.kafka_config.linger_ms = std::stoi(value);
+            } catch (const std::exception&) {
+                std::cerr << "Invalid KafkaLingerMs value: " << value << std::endl;
+            }
         }
     }
 

@@ -10,16 +10,25 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(open62541pp REQUIRED)
 find_package(Threads REQUIRED)
 
+# 查找 librdkafka
+find_library(RDKAFKA_LIBRARY rdkafka++)
+find_path(RDKAFKA_INCLUDE_DIR librdkafka/rdkafkacpp.h)
+
+if(NOT RDKAFKA_LIBRARY OR NOT RDKAFKA_INCLUDE_DIR)
+    message(FATAL_ERROR "librdkafka not found. Please install librdkafka development package.")
+endif()
+
 # 包含目录
 include_directories(code)
 
 # 源文件
 set(OPCUA_SOURCES
-    code/main.cpp
-    code/opcua_client/config.cpp
-    code/opcua_client/data_point.cpp
-    code/opcua_client/client.cpp
-    code/opcua_client/data_collector.cpp
+    code/data_collector/main.cpp
+    code/data_collector/opcua_client/config.cpp
+    code/data_collector/opcua_client/data_point.cpp
+    code/data_collector/opcua_client/client.cpp
+    code/data_collector/opcua_client/data_collector.cpp
+    code/data_collector/kafka_producer/kafka_producer.cpp
 )
 
 # 创建可执行文件
@@ -30,7 +39,11 @@ target_link_libraries(opcua_collector
     PRIVATE
         open62541pp::open62541pp
         Threads::Threads
+        ${RDKAFKA_LIBRARY}
 )
+
+# 包含目录
+target_include_directories(opcua_collector PRIVATE ${RDKAFKA_INCLUDE_DIR})
 
 # 编译选项
 target_compile_options(opcua_collector PRIVATE
