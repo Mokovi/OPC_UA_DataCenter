@@ -9,7 +9,7 @@ ConnectionTimeout = 5000
 SessionTimeout = 30000
 SubscriptionInterval = 1000
 
-# Kafka 配置
+# Kafka 配置 (生产者)
 KafkaBootstrapServers = localhost:9092
 KafkaTopic = opcua-data
 KafkaClientId = opcua-collector-01
@@ -17,3 +17,30 @@ KafkaAcks = 1
 KafkaRetries = 3
 KafkaBatchSize = 16384
 KafkaLingerMs = 5
+
+# Kafka 消费者配置 (数据处理器)
+KafkaGroupId = data-processor-group
+KafkaAutoCommit = true
+KafkaAutoCommitInterval = 5000
+KafkaSessionTimeout = 30000
+
+# Redis 配置
+RedisHost = localhost
+RedisPort = 6379
+RedisPassword =
+RedisConnectionTimeout = 5000
+RedisConnectionPoolSize = 10
+
+# MySQL 配置
+MySQLHost = localhost
+MySQLPort = 3306
+MySQLUsername = root
+MySQLPassword = password
+MySQLDatabase = opcua_data
+MySQLCharset = utf8mb4
+MySQLConnectionTimeout = 30
+
+# 数据处理器配置
+EnableConsoleOutput = true
+ProcessingThreads = 4
+MaxBatchSize = 100

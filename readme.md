@@ -337,6 +337,11 @@ distributed-data-collection/
 │   │       ├── kafka_producer.cpp
 │   │       └── kafka_producer.hpp
 │   └── data_processor/        # 数据处理模块
+│       ├── main.cpp
+│       ├── config.cpp/hpp     # 配置管理
+│       └── kafka_consumer/    # Kafka消费者子模块
+│           ├── kafka_consumer.cpp
+│           └── kafka_consumer.hpp
 │   ├── network/               # 网络框架
 │   │   ├── reactor.cpp
 │   │   ├── thread_pool.cpp

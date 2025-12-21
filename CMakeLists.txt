@@ -21,7 +21,7 @@ endif()
 # 包含目录
 include_directories(code)
 
-# 源文件
+# 数据采集器源文件
 set(OPCUA_SOURCES
     code/data_collector/main.cpp
     code/data_collector/opcua_client/config.cpp
@@ -31,11 +31,19 @@ set(OPCUA_SOURCES
     code/data_collector/kafka_producer/kafka_producer.cpp
 )
 
+# 数据处理器源文件
+set(PROCESSOR_SOURCES
+    code/data_processor/main.cpp
+    code/data_processor/config.cpp
+    code/data_processor/kafka_consumer/kafka_consumer.cpp
+)
+
 # 创建可执行文件
-add_executable(opcua_collector ${OPCUA_SOURCES})
+add_executable(data_collector ${OPCUA_SOURCES})
+add_executable(data_processor ${PROCESSOR_SOURCES})
 
 # 链接库
-target_link_libraries(opcua_collector
+target_link_libraries(data_collector
     PRIVATE
         open62541pp::open62541pp
         Threads::Threads
@@ -43,10 +51,10 @@ target_link_libraries(opcua_collector
 )
 
 # 包含目录
-target_include_directories(opcua_collector PRIVATE ${RDKAFKA_INCLUDE_DIR})
+target_include_directories(data_collector PRIVATE ${RDKAFKA_INCLUDE_DIR})
 
 # 编译选项
-target_compile_options(opcua_collector PRIVATE
+target_compile_options(data_collector PRIVATE
     -Wall
     -Wextra
     -Wpedantic
@@ -54,7 +62,24 @@ target_compile_options(opcua_collector PRIVATE
     -ggdb
 )
 
+target_compile_options(data_processor PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
+    -ggdb
+)
+
+# 链接库
+target_link_libraries(data_processor
+    PRIVATE
+        ${RDKAFKA_LIBRARY}
+)
+
+# 包含目录
+target_include_directories(data_processor PRIVATE ${RDKAFKA_INCLUDE_DIR})
+
 # 安装目标（可选）
-install(TARGETS opcua_collector
+install(TARGETS data_collector data_processor
     RUNTIME DESTINATION bin
 )

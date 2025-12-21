@@ -123,7 +123,7 @@ Created subscription for node: Sim.Device1.Test3
 
 ```
 code/
-├── data_collector/          # 数据采集模块
+├── data_collector/          # 数据采集模块 (opcua_collector)
 │   ├── main.cpp             # 程序入口
 │   ├── opcua_client/        # OPC UA 客户端子模块
 │   │   ├── config.hpp/cpp   # 配置加载
@@ -132,7 +132,11 @@ code/
 │   │   └── data_collector.hpp/cpp # 数据采集器
 │   └── kafka_producer/      # Kafka 生产者子模块
 │       └── kafka_producer.hpp/cpp # Kafka 消息发送
-└── data_processor/          # 数据处理模块
+└── data_processor/          # 数据处理模块 (data_processor)
+    ├── main.cpp             # 程序入口
+    ├── config.hpp/cpp       # 配置管理
+    └── kafka_consumer/      # Kafka 消费者子模块
+        └── kafka_consumer.hpp/cpp # Kafka 消息消费
 ```
 
 ## Kafka 集成说明
@@ -170,6 +174,85 @@ KafkaLingerMs = 5
 - 安装 librdkafka 开发包：`sudo apt-get install librdkafka-dev`
 - 确保 Kafka 服务器可访问
 - 配置适当的主题和分区策略
+
+## 数据处理器使用说明
+
+### 概述
+
+数据处理器 (`data_processor`) 是一个独立的可执行程序，用于从 Kafka 中消费数据并进行处理。目前主要功能是从 Kafka 消费消息并输出到控制台，为后续的数据清洗、存储和分析奠定基础。
+
+### 编译和运行
+
+```bash
+# 编译
+cd build && make data_processor
+
+# 运行
+./data_processor [config_file]
+
+# 查看帮助
+./data_processor --help
+```
+
+### 配置参数
+
+数据处理器使用与采集器相同的配置文件，但重点关注 Kafka 消费者配置：
+
+```ini
+# Kafka 消费者配置
+KafkaBootstrapServers = localhost:9092
+KafkaTopic = opcua-data
+KafkaGroupId = data-processor-group
+KafkaClientId = data-processor-01
+KafkaAutoCommit = true
+KafkaAutoCommitInterval = 5000
+KafkaSessionTimeout = 30000
+
+# 数据处理器配置
+EnableConsoleOutput = true
+ProcessingThreads = 4
+MaxBatchSize = 100
+```
+
+### 消息格式
+
+消费的 Kafka 消息格式如下：
+
+```json
+{
+  "source_id": "opc.tcp://192.168.10.17:49320",
+  "node_id": "Sim.Device1.Test1",
+  "value": "123.45",
+  "device_timestamp": 1734768000000,
+  "ingest_timestamp": 1734768000500,
+  "quality": 0
+}
+```
+
+### 输出示例
+
+程序运行时会显示类似以下的输出：
+
+```
+Data Processing System
+Loading configuration from: config
+
+Configuration loaded successfully:
+- Kafka servers: localhost:9092
+- Kafka topic: opcua-data
+- Kafka group: data-processor-group
+- Redis: localhost:6379
+- MySQL: localhost:3306/opcua_data
+
+Kafka consumer initialized successfully
+Bootstrap servers: localhost:9092
+Topic: opcua-data
+Group ID: data-processor-group
+Kafka consumer started, subscribed to topic: opcua-data
+
+[2025-12-21 15:42:01] KAFKA - Topic: opcua-data, Partition: 0, Offset: 123, Payload: {"source_id":"opc.tcp://192.168.10.17:49320","node_id":"Sim.Device1.Test1","value":"123.45","device_timestamp":1734768000000,"ingest_timestamp":1734768000500,"quality":0}
+[2025-12-21 15:42:02] KAFKA - Topic: opcua-data, Partition: 0, Offset: 124, Payload: {"source_id":"opc.tcp://192.168.10.17:49320","node_id":"Sim.Device1.Test2","value":"true","device_timestamp":1734768001000,"ingest_timestamp":1734768001500,"quality":0}
+```
 
 ### 扩展功能
 
