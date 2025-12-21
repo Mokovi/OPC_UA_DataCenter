@@ -1,6 +1,6 @@
-#include "opcua/config.hpp"
-#include "opcua/data_collector.hpp"
-#include "opcua/client.hpp"
+#include "opcua_client/config.hpp"
+#include "opcua_client/data_collector.hpp"
+#include "opcua_client/client.hpp"
 #include <iostream>
 #include <csignal>
 #include <atomic>

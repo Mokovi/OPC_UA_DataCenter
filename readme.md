@@ -325,11 +325,12 @@ rules:
 
 ```
 distributed-data-collection/
-├── src/
-│   ├── opcua/                 # OPC UA采集模块
+├── code/
+│   ├── opcua_client/          # OPC UA客户端模块
 │   │   ├── client.cpp
-│   │   ├── subscription.cpp
-│   │   └── deadband.cpp
+│   │   ├── config.cpp
+│   │   ├── data_point.cpp
+│   │   └── data_collector.cpp
 │   ├── network/               # 网络框架
 │   │   ├── reactor.cpp
 │   │   ├── thread_pool.cpp

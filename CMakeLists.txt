@@ -11,15 +11,15 @@ find_package(open62541pp REQUIRED)
 find_package(Threads REQUIRED)
 
 # 包含目录
-include_directories(src)
+include_directories(code)
 
 # 源文件
 set(OPCUA_SOURCES
-    src/main.cpp
-    src/opcua/config.cpp
-    src/opcua/data_point.cpp
-    src/opcua/client.cpp
-    src/opcua/data_collector.cpp
+    code/main.cpp
+    code/opcua_client/config.cpp
+    code/opcua_client/data_point.cpp
+    code/opcua_client/client.cpp
+    code/opcua_client/data_collector.cpp
 )
 
 # 创建可执行文件
