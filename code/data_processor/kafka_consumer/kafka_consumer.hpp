@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../config.hpp"
+#include "../utilities/config.hpp"
+#include "../redis_client/redis_client.hpp"
 #include <librdkafka/rdkafkacpp.h>
 #include <memory>
 #include <string>
@@ -42,6 +43,76 @@ public:
     void handleMessage(const std::string& topic, int32_t partition,
                       int64_t offset, const std::string& key,
                       const std::string& payload) override;
+};
+
+/**
+ * @brief Redis 数据处理器
+ * 将 Kafka 消息解析后存储到 Redis
+ */
+class RedisDataHandler : public IKafkaMessageHandler {
+public:
+    /**
+     * @brief 构造函数
+     * @param redis_client Redis 客户端实例
+     */
+    explicit RedisDataHandler(std::shared_ptr<IRedisClient> redis_client);
+
+    /**
+     * @brief 处理接收到的消息
+     */
+    void handleMessage(const std::string& topic, int32_t partition,
+                      int64_t offset, const std::string& key,
+                      const std::string& payload) override;
+
+    /**
+     * @brief 获取处理统计信息
+     * @return 处理成功和失败的数量
+     */
+    std::pair<size_t, size_t> getStats() const;
+
+    /**
+     * @brief 刷新缓冲区，确保所有数据都被写入 Redis
+     */
+    void flush();
+
+private:
+    /**
+     * @brief 解析 JSON 消息并提取数据点信息
+     * @param payload JSON 消息内容
+     * @return 解析后的数据点信息
+     */
+    std::optional<DataPoint> parseDataPoint(const std::string& payload);
+
+    std::shared_ptr<IRedisClient> redis_client_;      ///< Redis 客户端
+    size_t success_count_ = 0;                        ///< 成功处理数量
+    size_t failure_count_ = 0;                        ///< 失败处理数量
+    mutable std::mutex stats_mutex_;                  ///< 统计信息互斥锁
+};
+
+/**
+ * @brief 复合消息处理器
+ * 支持同时将消息发送到多个处理器（如控制台和Redis）
+ */
+class CompositeMessageHandler : public IKafkaMessageHandler {
+public:
+    /**
+     * @brief 构造函数
+     * @param handler1 第一个消息处理器
+     * @param handler2 第二个消息处理器
+     */
+    CompositeMessageHandler(std::shared_ptr<IKafkaMessageHandler> handler1,
+                           std::shared_ptr<IKafkaMessageHandler> handler2);
+
+    /**
+     * @brief 处理接收到的消息
+     */
+    void handleMessage(const std::string& topic, int32_t partition,
+                      int64_t offset, const std::string& key,
+                      const std::string& payload) override;
+
+private:
+    std::shared_ptr<IKafkaMessageHandler> handler1_;  ///< 第一个处理器
+    std::shared_ptr<IKafkaMessageHandler> handler2_;  ///< 第二个处理器
 };
 
 /**

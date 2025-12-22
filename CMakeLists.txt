@@ -18,6 +18,24 @@ if(NOT RDKAFKA_LIBRARY OR NOT RDKAFKA_INCLUDE_DIR)
     message(FATAL_ERROR "librdkafka not found. Please install librdkafka development package.")
 endif()
 
+# 查找 hiredis (Redis客户端库)
+find_library(HIREDIS_LIBRARY hiredis)
+find_path(HIREDIS_INCLUDE_DIR hiredis/hiredis.h)
+
+# 查找 rapidjson
+find_path(RAPIDJSON_INCLUDE_DIR rapidjson/document.h)
+
+# 检查Redis依赖是否可用 (必需)
+if(NOT HIREDIS_LIBRARY OR NOT HIREDIS_INCLUDE_DIR)
+    message(FATAL_ERROR "hiredis not found. Please install hiredis development package.")
+endif()
+
+if(NOT RAPIDJSON_INCLUDE_DIR)
+    message(FATAL_ERROR "rapidjson not found. Please install rapidjson development package.")
+endif()
+
+message(STATUS "Redis support enabled with hiredis and rapidjson")
+
 # 包含目录
 include_directories(code)
 
@@ -34,8 +52,10 @@ set(OPCUA_SOURCES
 # 数据处理器源文件
 set(PROCESSOR_SOURCES
     code/data_processor/main.cpp
-    code/data_processor/config.cpp
+    code/data_processor/utilities/config.cpp
     code/data_processor/kafka_consumer/kafka_consumer.cpp
+    code/data_processor/redis_client/redis_client.cpp
+    code/data_processor/utilities/json_parser.cpp
 )
 
 # 创建可执行文件
@@ -74,10 +94,11 @@ target_compile_options(data_processor PRIVATE
 target_link_libraries(data_processor
     PRIVATE
         ${RDKAFKA_LIBRARY}
+        ${HIREDIS_LIBRARY}
 )
 
 # 包含目录
-target_include_directories(data_processor PRIVATE ${RDKAFKA_INCLUDE_DIR})
+target_include_directories(data_processor PRIVATE ${RDKAFKA_INCLUDE_DIR} ${HIREDIS_INCLUDE_DIR} ${RAPIDJSON_INCLUDE_DIR})
 
 # 安装目标（可选）
 install(TARGETS data_collector data_processor

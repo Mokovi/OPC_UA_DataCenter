@@ -3,6 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include "../utilities/json_parser.hpp"
 
 namespace data_processor {
 
@@ -27,6 +28,66 @@ void ConsoleMessageHandler::handleMessage(const std::string& topic, int32_t part
     }
 
     std::cout << ", Payload: " << payload << std::endl;
+}
+
+RedisDataHandler::RedisDataHandler(std::shared_ptr<IRedisClient> redis_client)
+    : redis_client_(redis_client) {
+}
+
+void RedisDataHandler::handleMessage(const std::string& /*topic*/, int32_t /*partition*/,
+                                   int64_t offset, const std::string& /*key*/,
+                                   const std::string& payload) {
+    // 解析 JSON 消息
+    auto data_point = parseDataPoint(payload);
+    if (!data_point) {
+        failure_count_++;
+        std::cerr << "Failed to parse data point from message at offset " << offset << std::endl;
+        return;
+    }
+
+    // 异步存储到 Redis
+    redis_client_->storeDataPointAsync(*data_point, [this, offset](RedisResult result) {
+        if (result == RedisResult::Success) {
+            success_count_++;
+        } else {
+            failure_count_++;
+            std::cerr << "Failed to store data point at offset " << offset
+                      << " to Redis, error code: " << static_cast<int>(result) << std::endl;
+        }
+    });
+}
+
+std::pair<size_t, size_t> RedisDataHandler::getStats() const {
+    std::lock_guard<std::mutex> lock(stats_mutex_);
+    return {success_count_, failure_count_};
+}
+
+void RedisDataHandler::flush() {
+    // Redis 客户端是异步的，这里可以等待所有待处理的操作完成
+    std::cout << "Flushing Redis data handler..." << std::endl;
+    // 实际实现可能需要等待异步操作完成
+}
+
+std::optional<DataPoint> RedisDataHandler::parseDataPoint(const std::string& payload) {
+    return JsonMessageParser::parseDataPoint(payload);
+}
+
+CompositeMessageHandler::CompositeMessageHandler(std::shared_ptr<IKafkaMessageHandler> handler1,
+                                               std::shared_ptr<IKafkaMessageHandler> handler2)
+    : handler1_(handler1)
+    , handler2_(handler2) {
+}
+
+void CompositeMessageHandler::handleMessage(const std::string& topic, int32_t partition,
+                                          int64_t offset, const std::string& key,
+                                          const std::string& payload) {
+    // 同时发送到两个处理器
+    if (handler1_) {
+        handler1_->handleMessage(topic, partition, offset, key, payload);
+    }
+    if (handler2_) {
+        handler2_->handleMessage(topic, partition, offset, key, payload);
+    }
 }
 
 class ConsumerEventCb : public RdKafka::EventCb {

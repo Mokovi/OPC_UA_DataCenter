@@ -338,10 +338,15 @@ distributed-data-collection/
 │   │       └── kafka_producer.hpp
 │   └── data_processor/        # 数据处理模块
 │       ├── main.cpp
-│       ├── config.cpp/hpp     # 配置管理
-│       └── kafka_consumer/    # Kafka消费者子模块
-│           ├── kafka_consumer.cpp
-│           └── kafka_consumer.hpp
+│       ├── utilities/         # 工具模块
+│       │   ├── config.cpp/hpp # 配置管理
+│       │   └── json_parser.cpp/hpp # JSON解析
+│       ├── kafka_consumer/    # Kafka消费者子模块
+│       │   ├── kafka_consumer.cpp
+│       │   └── kafka_consumer.hpp
+│       └── redis_client/      # Redis客户端子模块
+│           ├── redis_client.cpp
+│           └── redis_client.hpp
 │   ├── network/               # 网络框架
 │   │   ├── reactor.cpp
 │   │   ├── thread_pool.cpp

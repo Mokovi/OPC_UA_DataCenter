@@ -1,21 +1,49 @@
-# OPC UA 数据采集器使用指南
+# OPC UA 数据采集与处理系统使用指南
 
 ## 概述
 
-OPC UA 数据采集器是分布式高可用数据采集与分析系统的核心组件之一，用于从 OPC UA 服务器（如 KepserverEx）采集工业设备数据。
+OPC UA 数据采集与处理系统是分布式高可用数据采集与分析系统的核心组件，包括数据采集器和数据处理器两个主要部分：
+
+- **数据采集器 (opcua_collector)**: 基于 open62541pp 实现的 OPC UA 客户端，从 OPC UA 服务器采集工业设备数据
+- **数据处理器 (data_processor)**: 基于 librdkafka 和 hiredis 实现的高性能数据处理组件，支持 Kafka 消息消费和 Redis 数据存储
 
 ## 功能特性
 
+### 数据采集器
 - 基于 open62541pp 实现的 OPC UA 客户端
 - 支持配置文件驱动的节点订阅
 - 实时数据采集和状态监控
 - 模块化设计，便于扩展和维护
 
+### 数据处理器
+- 基于 librdkafka 的高性能 Kafka 消费者
+- 支持 JSON 消息解析 (使用 rapidjson)
+- 基于 hiredis 的异步 Redis 客户端
+- Redis Hash 数据存储，支持高速缓存和查询
+- 复合消息处理器，同时支持控制台输出和 Redis 存储
+
 ## 构建要求
 
+### 数据采集器
 - C++17 编译器
 - CMake 3.16+
 - open62541pp 库
+
+### 数据处理器
+- C++17 编译器
+- CMake 3.16+
+- librdkafka 库 (librdkafka++ 和 librdkafka)
+- hiredis 库
+- rapidjson 库
+
+#### 依赖包安装 (Ubuntu/Debian)
+```bash
+# 数据采集器依赖
+sudo apt-get install libopen62541pp-dev
+
+# 数据处理器依赖
+sudo apt-get install librdkafka-dev hiredis-dev rapidjson-dev
+```
 
 ## 构建步骤
 
@@ -30,8 +58,10 @@ cmake ..
 make -j$(nproc)
 
 # 生成的可执行文件
-ls -la opcua_collector
+ls -la opcua_collector data_processor
 ```
+
+构建系统会自动检测依赖库，如果缺少可选依赖（如 hiredis、rapidjson），会生成相应的警告并禁用相关功能。
 
 ## 配置说明
 
@@ -208,6 +238,22 @@ KafkaAutoCommit = true
 KafkaAutoCommitInterval = 5000
 KafkaSessionTimeout = 30000
 
+# Redis 配置
+RedisHost = localhost
+RedisPort = 6379
+RedisPassword =
+RedisConnectionTimeout = 5000
+RedisConnectionPoolSize = 10
+
+# MySQL 配置 (预留)
+MySQLHost = localhost
+MySQLPort = 3306
+MySQLUsername = root
+MySQLPassword = password
+MySQLDatabase = opcua_data
+MySQLCharset = utf8mb4
+MySQLConnectionTimeout = 30
+
 # 数据处理器配置
 EnableConsoleOutput = true
 ProcessingThreads = 4
@@ -253,6 +299,67 @@ Kafka consumer started, subscribed to topic: opcua-data
 [2025-12-21 15:42:01] KAFKA - Topic: opcua-data, Partition: 0, Offset: 123, Payload: {"source_id":"opc.tcp://192.168.10.17:49320","node_id":"Sim.Device1.Test1","value":"123.45","device_timestamp":1734768000000,"ingest_timestamp":1734768000500,"quality":0}
 [2025-12-21 15:42:02] KAFKA - Topic: opcua-data, Partition: 0, Offset: 124, Payload: {"source_id":"opc.tcp://192.168.10.17:49320","node_id":"Sim.Device1.Test2","value":"true","device_timestamp":1734768001000,"ingest_timestamp":1734768001500,"quality":0}
 ```
+
+### 数据处理器使用示例
+
+启动数据处理器：
+
+```bash
+# 使用默认配置文件
+./data_processor
+
+# 指定配置文件
+./data_processor /path/to/config
+```
+
+运行输出示例：
+
+```
+Data Processing System
+Loading configuration from: config
+
+Kafka consumer started, subscribed to topic: opcua-data
+Redis client started successfully
+Consumer Status: Connected | Redis Status: Connected | Redis Stats: 125/125 stored
+```
+
+## Redis 存储说明
+
+### 概述
+
+数据处理器支持将 Kafka 中消费到的数据实时存储到 Redis 中，实现高速数据缓存和查询功能。每个数据点以 Hash 结构存储在 Redis 中，便于快速访问和更新。
+
+### Redis 数据结构
+
+每个 OPC UA 数据点在 Redis 中存储为一个 Hash，键格式为：
+```
+DataPoint:{node_id}
+```
+
+Hash 字段包括：
+- `value`: 数据值（字符串形式）
+- `updated_at`: 最后更新时间戳（毫秒）
+- `quality`: 数据质量
+
+### 示例查询
+
+```bash
+# 查看数据点信息
+HGETALL "DataPoint:Sim.Device1.Test1"
+
+# 获取特定字段
+HGET "DataPoint:Sim.Device1.Test1" value
+HGET "DataPoint:Sim.Device1.Test1" updated_at
+HGET "DataPoint:Sim.Device1.Test1" quality
+```
+
+### 性能特性
+
+- **异步操作**: 非阻塞的数据存储操作
+- **批量写入**: 支持批量数据点存储
+- **自动清理**: 7天过期时间，防止无限增长
+- **错误恢复**: 自动重连和故障恢复
+- **高并发**: 基于 hiredis 的高性能异步客户端
 
 ### 扩展功能
 
